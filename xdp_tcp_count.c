@@ -34,12 +34,17 @@ BPF_RINGBUF_OUTPUT(buffer, 16);
 #else
 struct {
     __uint(type, BPF_MAP_TYPE_RINGBUF);
-    __uint(max_entries, 4096); /* <https://stackoverflow.com/q/63415220/2812207> ¯\_(ツ)_/¯ */
+	/* <https://stackoverflow.com/q/63415220/2812207> ¯\_(ツ)_/¯ */
+    __uint(max_entries, 4096);
 } buffer SEC(".maps");
 #endif
 
-static bool get_syn_data(const struct tcphdr *tcp) {
-	return true;
+static u64 get_syn_data(const struct tcphdr *tcp) {
+#ifdef __BCC__
+    return tcp->syn;
+#else
+    return BPF_CORE_READ_BITFIELD(tcp, syn);
+#endif
 }
 
 #ifndef __BCC__
